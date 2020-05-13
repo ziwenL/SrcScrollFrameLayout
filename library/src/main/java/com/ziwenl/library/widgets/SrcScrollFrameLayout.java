@@ -96,6 +96,12 @@ public class SrcScrollFrameLayout extends FrameLayout {
         if (mDrawable == null || !(mDrawable instanceof BitmapDrawable)) {
             return;
         }
+        if (getVisibility() == GONE) {
+            return;
+        }
+        if (w == 0 || h == 0) {
+            return;
+        }
         if (mSrcBitmap == null) {
             Bitmap bitmap = ((BitmapDrawable) mDrawable).getBitmap();
             //按当前View宽度比例缩放 Bitmap
