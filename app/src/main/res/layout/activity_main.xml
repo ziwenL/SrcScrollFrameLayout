@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.ziwenl.library.widgets.SrcScrollFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/fl_main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:maskLayerColor="#80000000"
+    app:src="@mipmap/login_longpic_background">
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="160dp"
+        android:src="@mipmap/login_icon_red_logo_login" />
+
+    <Button
+        android:id="@+id/btn_start"
+        android:layout_width="220dp"
+        android:layout_height="45dp"
+        android:layout_gravity="center_horizontal|bottom"
+        android:layout_marginBottom="200dp"
+        android:background="@drawable/shape_btn_bg"
+        android:text="开始滚动" />
+
+    <Button
+        android:id="@+id/btn_stop"
+        android:layout_width="220dp"
+        android:layout_height="45dp"
+        android:layout_gravity="center_horizontal|bottom"
+        android:layout_marginBottom="140dp"
+        android:background="@drawable/shape_btn_bg"
+        android:text="停止滚动" />
+</com.ziwenl.library.widgets.SrcScrollFrameLayout>
