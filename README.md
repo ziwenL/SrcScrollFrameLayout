@@ -13,6 +13,7 @@
 | maskLayerColor | color |设置遮罩层颜色，建议带透明度
 | isScroll | boolean |设置是否滚动
 | speed | integer |滚动速度，建议取值区间 [1,50]
+| scrollOrientation| integer |滚动方向,默认是竖直方向滚动
 
 <h3>使用方法</h3>
 <ul>
