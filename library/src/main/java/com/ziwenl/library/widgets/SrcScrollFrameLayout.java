@@ -10,13 +10,10 @@ import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.widget.FrameLayout;
-
 import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import com.ziwenl.library.R;
 
 /**
@@ -26,11 +23,12 @@ import com.ziwenl.library.R;
  * Time : 11:23
  * Introduction :仿小红书登陆页面背景图无限滚动 FrameLayout
  * 功能特点：
- * 1.将选择的图片按比例缩放填满当前 View 宽度
- * 2.背景图片缩放后高度小于当前 View 高度时自动复制黏贴直到占满当前 View 高度，以此来达到无限滚动效果
+ * 1.将选择的图片按比例缩放填满当前 View 高度
+ * 2.背景图片缩放后宽/高度小于当前 View 宽/高度时自动复制黏贴直到占满当前 View 宽/高度，以此来达到无限滚动效果
  * 3.可通过自定义属性 speed 调整滚动速度，提供 slow、ordinary 和 fast 选项，也可自行填入 int 值，值越大滚动速度越快，建议 1 ≤ speed ≤ 50
  * 4.可通过自定义属性 maskLayerColor 设置遮罩层颜色，建议带透明度
  * 5.提供 startScroll 和 stopScroll 方法控制开始/停止滚动
+ * 6.可通过自定义属性 scrollOrientation 设置滚动方向为上移或左移,默认滚动方向为上移
  */
 public class SrcScrollFrameLayout extends FrameLayout {
 
@@ -55,6 +53,10 @@ public class SrcScrollFrameLayout extends FrameLayout {
      */
     private boolean mIsScroll;
     /**
+     * 滚动方向：上移/左移，默认上移
+     */
+    private int mScrollOrientation;
+    /**
      * 遮罩层颜色
      */
     @ColorInt
@@ -78,6 +80,7 @@ public class SrcScrollFrameLayout extends FrameLayout {
 
         TypedArray array = context.getTheme().obtainStyledAttributes(attrs, R.styleable.SrcScrollFrameLayout, defStyleAttr, 0);
         int speed = array.getInteger(R.styleable.SrcScrollFrameLayout_speed, 3);
+        mScrollOrientation = array.getInteger(R.styleable.SrcScrollFrameLayout_scrollOrientation, 0);
         mIntervalIncreaseDistance = speed * mIntervalIncreaseDistance;
         mDrawable = array.getDrawable(R.styleable.SrcScrollFrameLayout_src);
         mIsScroll = array.getBoolean(R.styleable.SrcScrollFrameLayout_isScroll, true);
@@ -104,12 +107,17 @@ public class SrcScrollFrameLayout extends FrameLayout {
         }
         if (mSrcBitmap == null) {
             Bitmap bitmap = ((BitmapDrawable) mDrawable).getBitmap();
-            //按当前View宽度比例缩放 Bitmap
-            mSrcBitmap = scaleBitmap(bitmap, getMeasuredWidth());
+            //调整色彩模式进行质量压缩
+            Bitmap compressBitmap = bitmap.copy(Bitmap.Config.RGB_565, true);
+            //缩放 Bitmap
+            mSrcBitmap = scaleBitmap(compressBitmap);
             //计算至少需要几个 bitmap 才能填满当前 view
-            mBitmapCount = getMeasuredHeight() / mSrcBitmap.getHeight() + 1;
-            if (!bitmap.isRecycled()) {
-                bitmap.isRecycled();
+            mBitmapCount = scrollOrientationIsVertical() ?
+                    getMeasuredHeight() / mSrcBitmap.getHeight() + 1
+                    :
+                    getMeasuredWidth() / mSrcBitmap.getWidth() + 1;
+            if (!compressBitmap.isRecycled()) {
+                compressBitmap.isRecycled();
                 System.gc();
             }
         }
@@ -121,17 +129,26 @@ public class SrcScrollFrameLayout extends FrameLayout {
         if (mSrcBitmap == null) {
             return;
         }
-        if (mSrcBitmap.getHeight() + mPanDistance != 0) {
+        int length = scrollOrientationIsVertical() ? mSrcBitmap.getHeight() : mSrcBitmap.getWidth();
+        if (length + mPanDistance != 0) {
             //第一张图片未完全滚出屏幕
             mMatrix.reset();
-            mMatrix.postTranslate(0, mPanDistance);
+            if (scrollOrientationIsVertical()) {
+                mMatrix.postTranslate(0, mPanDistance);
+            } else {
+                mMatrix.postTranslate(mPanDistance, 0);
+            }
             canvas.drawBitmap(mSrcBitmap, mMatrix, mPaint);
         }
-        if (mSrcBitmap.getHeight() + mPanDistance < getMeasuredHeight()) {
+        if (length + mPanDistance < (scrollOrientationIsVertical() ? getMeasuredHeight() : getMeasuredWidth())) {
             //用于补充留白的图片出现在屏幕
             for (int i = 0; i < mBitmapCount; i++) {
                 mMatrix.reset();
-                mMatrix.postTranslate(0, (i + 1) * mSrcBitmap.getHeight() + mPanDistance);
+                if (scrollOrientationIsVertical()) {
+                    mMatrix.postTranslate(0, (i + 1) * mSrcBitmap.getHeight() + mPanDistance);
+                } else {
+                    mMatrix.postTranslate((i + 1) * mSrcBitmap.getWidth() + mPanDistance, 0);
+                }
                 canvas.drawBitmap(mSrcBitmap, mMatrix, mPaint);
             }
         }
@@ -151,7 +168,8 @@ public class SrcScrollFrameLayout extends FrameLayout {
     private Runnable mRedrawRunnable = new Runnable() {
         @Override
         public void run() {
-            if (mSrcBitmap.getHeight() + mPanDistance <= 0) {
+            int length = scrollOrientationIsVertical() ? mSrcBitmap.getHeight() : mSrcBitmap.getWidth();
+            if (length + mPanDistance <= 0) {
                 //第一张已完全滚出屏幕，重置平移距离
                 mPanDistance = 0;
             }
@@ -191,12 +209,30 @@ public class SrcScrollFrameLayout extends FrameLayout {
         if (oldScrollStatus) {
             stopScroll();
         }
+        Bitmap compressBitmap;
+        if (srcBitmap.getConfig() != Bitmap.Config.RGB_565) {
+            if (srcBitmap.isMutable()) {
+                srcBitmap.setConfig(Bitmap.Config.RGB_565);
+                compressBitmap = srcBitmap;
+            } else {
+                compressBitmap = srcBitmap.copy(Bitmap.Config.RGB_565, true);
+            }
+        } else {
+            compressBitmap = srcBitmap;
+        }
         //按当前View宽度比例缩放 Bitmap
-        mSrcBitmap = scaleBitmap(srcBitmap, getMeasuredWidth());
+        mSrcBitmap = scaleBitmap(compressBitmap);
         //计算至少需要几个 bitmap 才能填满当前 view
-        mBitmapCount = getMeasuredHeight() / mSrcBitmap.getHeight() + 1;
+        mBitmapCount = scrollOrientationIsVertical() ?
+                getMeasuredHeight() / mSrcBitmap.getHeight() + 1
+                :
+                getMeasuredWidth() / mSrcBitmap.getWidth() + 1;
         if (!srcBitmap.isRecycled()) {
             srcBitmap.isRecycled();
+            System.gc();
+        }
+        if (!compressBitmap.isRecycled()) {
+            compressBitmap.isRecycled();
             System.gc();
         }
         if (oldScrollStatus) {
@@ -204,17 +240,41 @@ public class SrcScrollFrameLayout extends FrameLayout {
         }
     }
 
+    private boolean scrollOrientationIsVertical() {
+        return mScrollOrientation == 0;
+    }
+
+    public void changeScrollOrientation() {
+        mPanDistance = 0;
+        mScrollOrientation = scrollOrientationIsVertical() ? 1 : 0;
+        if (mSrcBitmap != null) {
+            if (mDrawable != null && (mDrawable instanceof BitmapDrawable)) {
+                Bitmap bitmap = ((BitmapDrawable) mDrawable).getBitmap();
+                if (!bitmap.isRecycled()) {
+                    setSrcBitmap(bitmap);
+                    return;
+                }
+            }
+            setSrcBitmap(mSrcBitmap);
+        }
+    }
+
     /**
      * 缩放Bitmap
      */
-    private Bitmap scaleBitmap(Bitmap originBitmap, int newWidth) {
+    private Bitmap scaleBitmap(Bitmap originBitmap) {
         int width = originBitmap.getWidth();
         int height = originBitmap.getHeight();
-        float scaleWidth = (float) newWidth / width;
-        float newHeight = scaleWidth * height;
-        float scaleHeight = newHeight / height;
-        Matrix matrix = new Matrix();
-        matrix.postScale(scaleWidth, scaleHeight);
-        return Bitmap.createBitmap(originBitmap, 0, 0, width, height, matrix, true);
+        int newHeight;
+        int newWidth;
+        if (scrollOrientationIsVertical()) {
+            newWidth = getMeasuredWidth();
+            newHeight = newWidth * height / width;
+        } else {
+            newHeight = getMeasuredHeight();
+            newWidth = newHeight * width / height;
+        }
+
+        return Bitmap.createScaledBitmap(originBitmap, newWidth, newHeight, true);
     }
 }

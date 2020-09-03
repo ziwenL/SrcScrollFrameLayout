@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:maskLayerColor="#80000000"
+    app:scrollOrientation="vertical"
     app:src="@mipmap/login_longpic_background">
 
     <ImageView
@@ -19,7 +20,7 @@
         android:layout_width="220dp"
         android:layout_height="45dp"
         android:layout_gravity="center_horizontal|bottom"
-        android:layout_marginBottom="200dp"
+        android:layout_marginBottom="220dp"
         android:background="@drawable/shape_btn_bg"
         android:text="开始滚动" />
 
@@ -28,7 +29,16 @@
         android:layout_width="220dp"
         android:layout_height="45dp"
         android:layout_gravity="center_horizontal|bottom"
-        android:layout_marginBottom="140dp"
+        android:layout_marginBottom="160dp"
         android:background="@drawable/shape_btn_bg"
         android:text="停止滚动" />
+
+    <Button
+        android:id="@+id/btn_change"
+        android:layout_width="220dp"
+        android:layout_height="45dp"
+        android:layout_gravity="center_horizontal|bottom"
+        android:layout_marginBottom="100dp"
+        android:background="@drawable/shape_btn_bg"
+        android:text="切换滚动方向" />
 </com.ziwenl.library.widgets.SrcScrollFrameLayout>
