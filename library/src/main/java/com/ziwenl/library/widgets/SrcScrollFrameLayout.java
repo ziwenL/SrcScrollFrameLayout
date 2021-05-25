@@ -211,12 +211,7 @@ public class SrcScrollFrameLayout extends FrameLayout {
         }
         Bitmap compressBitmap;
         if (srcBitmap.getConfig() != Bitmap.Config.RGB_565) {
-            if (srcBitmap.isMutable()) {
-                srcBitmap.setConfig(Bitmap.Config.RGB_565);
-                compressBitmap = srcBitmap;
-            } else {
-                compressBitmap = srcBitmap.copy(Bitmap.Config.RGB_565, true);
-            }
+            compressBitmap = srcBitmap.copy(Bitmap.Config.RGB_565, true);
         } else {
             compressBitmap = srcBitmap;
         }
