@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.ziwenl.library.widgets.SrcScrollFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.ziwenl.library.widgets.SrcLoopScrollFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/fl_main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:maskLayerColor="#80000000"
-    app:scrollOrientation="vertical"
+    app:scrollOrientation="toTop"
     app:src="@mipmap/login_longpic_background">
 
     <ImageView
@@ -41,4 +41,4 @@
         android:layout_marginBottom="100dp"
         android:background="@drawable/shape_btn_bg"
         android:text="切换滚动方向" />
-</com.ziwenl.library.widgets.SrcScrollFrameLayout>
+</com.ziwenl.library.widgets.SrcLoopScrollFrameLayout>
