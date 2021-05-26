@@ -35,6 +35,7 @@ import java.lang.annotation.RetentionPolicy;
  * 4.可通过自定义属性 maskLayerColor 设置遮罩层颜色，建议带透明度
  * 5.提供 startScroll 和 stopScroll 方法控制开始/停止滚动
  * 6.可通过自定义属性 scrollOrientation 设置滚动方向，可设置为上移、下移、左移或右移
+ *
  * @Deprecated 建议使用最新的 kotlin 版 {@link SrcLoopScrollFrameLayout}，后续 Java 版本可能将放弃维护
  */
 @Deprecated
@@ -46,14 +47,14 @@ public class SrcScrollFrameLayout extends FrameLayout {
      * 2:往左滚出
      * 3:往右滚出
      */
-    private final static int OUT_SLIDE_TOP = 0;
-    private final static int OUT_SLIDE_BOTTOM = 1;
-    private final static int OUT_SLIDE_LEFT = 2;
-    private final static int OUT_SLIDE_RIGHT = 3;
+    public final static int OUT_SLIDE_TOP = 0;
+    public final static int OUT_SLIDE_BOTTOM = 1;
+    public final static int OUT_SLIDE_LEFT = 2;
+    public final static int OUT_SLIDE_RIGHT = 3;
 
     @IntDef({OUT_SLIDE_TOP, OUT_SLIDE_BOTTOM, OUT_SLIDE_LEFT, OUT_SLIDE_RIGHT})
     @Retention(RetentionPolicy.SOURCE)
-    @interface ScrollOrientation {
+    public @interface ScrollOrientation {
     }
 
     /**
@@ -286,6 +287,25 @@ public class SrcScrollFrameLayout extends FrameLayout {
      */
     private boolean scrollOrientationIsVertical() {
         return mScrollOrientation == OUT_SLIDE_TOP || mScrollOrientation == OUT_SLIDE_BOTTOM;
+    }
+
+    /**
+     * 设置滚动方向
+     * @param scrollOrientation
+     */
+    public void setScrollOrientation(@ScrollOrientation int scrollOrientation) {
+        mPanDistance = 0;
+        mScrollOrientation = scrollOrientation;
+        if (mSrcBitmap != null) {
+            if (mDrawable != null && (mDrawable instanceof BitmapDrawable)) {
+                Bitmap bitmap = ((BitmapDrawable) mDrawable).getBitmap();
+                if (!bitmap.isRecycled()) {
+                    setSrcBitmap(bitmap);
+                    return;
+                }
+            }
+            setSrcBitmap(mSrcBitmap);
+        }
     }
 
     /**

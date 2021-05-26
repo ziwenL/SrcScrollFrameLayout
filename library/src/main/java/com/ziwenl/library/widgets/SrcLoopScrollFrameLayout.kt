@@ -9,6 +9,7 @@ import android.widget.FrameLayout
 import androidx.annotation.ColorInt
 import androidx.annotation.IntDef
 import com.ziwenl.library.R
+import java.lang.annotation.RetentionPolicy
 
 /**
  * PackageName : com.ziwenl.library.widgets
@@ -27,6 +28,14 @@ import com.ziwenl.library.R
 class SrcLoopScrollFrameLayout : FrameLayout {
 
     companion object {
+
+        /**
+         * 滚动方向
+         */
+        @IntDef(OUT_SLIDE_TOP, OUT_SLIDE_BOTTOM, OUT_SLIDE_LEFT, OUT_SLIDE_RIGHT)
+        @java.lang.annotation.Retention(RetentionPolicy.SOURCE)
+        annotation class ScrollOrientation
+
         /**
          * 滚动方向常量
          * 0:往上滚出
@@ -34,10 +43,10 @@ class SrcLoopScrollFrameLayout : FrameLayout {
          * 2:往左滚出
          * 3:往右滚出
          */
-        private const val OUT_SLIDE_TOP = 0
-        private const val OUT_SLIDE_BOTTOM = 1
-        private const val OUT_SLIDE_LEFT = 2
-        private const val OUT_SLIDE_RIGHT = 3
+        const val OUT_SLIDE_TOP = 0
+        const val OUT_SLIDE_BOTTOM = 1
+        const val OUT_SLIDE_LEFT = 2
+        const val OUT_SLIDE_RIGHT = 3
 
         /**
          * 重绘间隔时间
@@ -45,12 +54,6 @@ class SrcLoopScrollFrameLayout : FrameLayout {
         private const val DEFAULT_DRAW_INTERVALS_TIME = 5L
     }
 
-    /**
-     * 滚动方向
-     */
-    @IntDef(OUT_SLIDE_TOP, OUT_SLIDE_BOTTOM, OUT_SLIDE_LEFT, OUT_SLIDE_RIGHT)
-    @Retention(AnnotationRetention.SOURCE)
-    annotation class ScrollOrientation
 
     /**
      * 间隔时间内平移距离
@@ -285,6 +288,24 @@ class SrcLoopScrollFrameLayout : FrameLayout {
         }
         mIsScroll = false
         handler.removeCallbacks(mRedrawRunnable)
+    }
+
+    /**
+     * 设置滚动方向
+     */
+    fun setScrollOrientation(@ScrollOrientation scrollOrientation: Int) {
+        mPanDistance = 0f
+        mScrollOrientation = scrollOrientation
+        if (mSrcBitmap != null) {
+            if (mDrawable != null && mDrawable is BitmapDrawable) {
+                val bitmap = (mDrawable as BitmapDrawable).bitmap
+                if (!bitmap.isRecycled) {
+                    setSrcBitmap(bitmap)
+                    return
+                }
+            }
+            setSrcBitmap(mSrcBitmap!!)
+        }
     }
 
     /**
