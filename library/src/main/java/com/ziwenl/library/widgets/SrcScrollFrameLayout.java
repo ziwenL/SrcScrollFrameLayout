@@ -11,10 +11,16 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.widget.FrameLayout;
+
 import androidx.annotation.ColorInt;
+import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
 import com.ziwenl.library.R;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
  * PackageName : com.ziwenl.library.widgets
@@ -28,9 +34,27 @@ import com.ziwenl.library.R;
  * 3.可通过自定义属性 speed 调整滚动速度，提供 slow、ordinary 和 fast 选项，也可自行填入 int 值，值越大滚动速度越快，建议 1 ≤ speed ≤ 50
  * 4.可通过自定义属性 maskLayerColor 设置遮罩层颜色，建议带透明度
  * 5.提供 startScroll 和 stopScroll 方法控制开始/停止滚动
- * 6.可通过自定义属性 scrollOrientation 设置滚动方向为上移或左移,默认滚动方向为上移
+ * 6.可通过自定义属性 scrollOrientation 设置滚动方向，可设置为上移、下移、左移或右移
+ * @Deprecated 建议使用最新的 kotlin 版 {@link SrcLoopScrollFrameLayout}，后续 Java 版本可能将放弃维护
  */
+@Deprecated
 public class SrcScrollFrameLayout extends FrameLayout {
+    /**
+     * 滚动方向
+     * 0:往上滚出
+     * 1:往下滚出
+     * 2:往左滚出
+     * 3:往右滚出
+     */
+    private final static int OUT_SLIDE_TOP = 0;
+    private final static int OUT_SLIDE_BOTTOM = 1;
+    private final static int OUT_SLIDE_LEFT = 2;
+    private final static int OUT_SLIDE_RIGHT = 3;
+
+    @IntDef({OUT_SLIDE_TOP, OUT_SLIDE_BOTTOM, OUT_SLIDE_LEFT, OUT_SLIDE_RIGHT})
+    @Retention(RetentionPolicy.SOURCE)
+    @interface ScrollOrientation {
+    }
 
     /**
      * 重绘间隔时间
@@ -53,8 +77,9 @@ public class SrcScrollFrameLayout extends FrameLayout {
      */
     private boolean mIsScroll;
     /**
-     * 滚动方向：上移/左移，默认上移
+     * 滚动方向，默认往上滚出
      */
+    @ScrollOrientation
     private int mScrollOrientation;
     /**
      * 遮罩层颜色
@@ -80,7 +105,7 @@ public class SrcScrollFrameLayout extends FrameLayout {
 
         TypedArray array = context.getTheme().obtainStyledAttributes(attrs, R.styleable.SrcScrollFrameLayout, defStyleAttr, 0);
         int speed = array.getInteger(R.styleable.SrcScrollFrameLayout_speed, 3);
-        mScrollOrientation = array.getInteger(R.styleable.SrcScrollFrameLayout_scrollOrientation, 0);
+        mScrollOrientation = array.getInteger(R.styleable.SrcScrollFrameLayout_scrollOrientation, OUT_SLIDE_TOP);
         mIntervalIncreaseDistance = speed * mIntervalIncreaseDistance;
         mDrawable = array.getDrawable(R.styleable.SrcScrollFrameLayout_src);
         mIsScroll = array.getBoolean(R.styleable.SrcScrollFrameLayout_isScroll, true);
@@ -130,24 +155,45 @@ public class SrcScrollFrameLayout extends FrameLayout {
             return;
         }
         int length = scrollOrientationIsVertical() ? mSrcBitmap.getHeight() : mSrcBitmap.getWidth();
+        int measuredHeight = getMeasuredHeight();
+        int measuredWidth = getMeasuredWidth();
         if (length + mPanDistance != 0) {
             //第一张图片未完全滚出屏幕
             mMatrix.reset();
-            if (scrollOrientationIsVertical()) {
-                mMatrix.postTranslate(0, mPanDistance);
-            } else {
-                mMatrix.postTranslate(mPanDistance, 0);
+            switch (mScrollOrientation) {
+                case OUT_SLIDE_TOP:
+                    mMatrix.postTranslate(0, mPanDistance);
+                    break;
+                case OUT_SLIDE_BOTTOM:
+                    mMatrix.postTranslate(0f, measuredHeight - length - mPanDistance);
+                    break;
+                case OUT_SLIDE_LEFT:
+                    mMatrix.postTranslate(mPanDistance, 0);
+                    break;
+                case OUT_SLIDE_RIGHT:
+                    mMatrix.postTranslate(measuredWidth - length - mPanDistance, 0f);
+                    break;
+
             }
             canvas.drawBitmap(mSrcBitmap, mMatrix, mPaint);
         }
-        if (length + mPanDistance < (scrollOrientationIsVertical() ? getMeasuredHeight() : getMeasuredWidth())) {
+        if (length + mPanDistance < (scrollOrientationIsVertical() ? measuredHeight : measuredWidth)) {
             //用于补充留白的图片出现在屏幕
             for (int i = 0; i < mBitmapCount; i++) {
                 mMatrix.reset();
-                if (scrollOrientationIsVertical()) {
-                    mMatrix.postTranslate(0, (i + 1) * mSrcBitmap.getHeight() + mPanDistance);
-                } else {
-                    mMatrix.postTranslate((i + 1) * mSrcBitmap.getWidth() + mPanDistance, 0);
+                switch (mScrollOrientation) {
+                    case OUT_SLIDE_TOP:
+                        mMatrix.postTranslate(0f, (i + 1) * length + mPanDistance);
+                        break;
+                    case OUT_SLIDE_BOTTOM:
+                        mMatrix.postTranslate(0f, measuredHeight - (i + 2) * length - mPanDistance);
+                        break;
+                    case OUT_SLIDE_LEFT:
+                        mMatrix.postTranslate((i + 1) * length + mPanDistance, 0f);
+                        break;
+                    case OUT_SLIDE_RIGHT:
+                        mMatrix.postTranslate(measuredWidth - (i + 2) * length - mPanDistance, 0f);
+                        break;
                 }
                 canvas.drawBitmap(mSrcBitmap, mMatrix, mPaint);
             }
@@ -173,7 +219,7 @@ public class SrcScrollFrameLayout extends FrameLayout {
                 //第一张已完全滚出屏幕，重置平移距离
                 mPanDistance = 0;
             }
-            mPanDistance = mPanDistance - mIntervalIncreaseDistance;
+            mPanDistance -= mIntervalIncreaseDistance;
             invalidate();
         }
     };
@@ -235,13 +281,23 @@ public class SrcScrollFrameLayout extends FrameLayout {
         }
     }
 
+    /**
+     * 判断是否为竖直滚动
+     */
     private boolean scrollOrientationIsVertical() {
-        return mScrollOrientation == 0;
+        return mScrollOrientation == OUT_SLIDE_TOP || mScrollOrientation == OUT_SLIDE_BOTTOM;
     }
 
+    /**
+     * 切换滚动方向
+     */
     public void changeScrollOrientation() {
         mPanDistance = 0;
-        mScrollOrientation = scrollOrientationIsVertical() ? 1 : 0;
+        if (mScrollOrientation == OUT_SLIDE_RIGHT) {
+            mScrollOrientation = OUT_SLIDE_TOP;
+        } else {
+            mScrollOrientation++;
+        }
         if (mSrcBitmap != null) {
             if (mDrawable != null && (mDrawable instanceof BitmapDrawable)) {
                 Bitmap bitmap = ((BitmapDrawable) mDrawable).getBitmap();
