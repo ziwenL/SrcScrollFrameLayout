@@ -9,7 +9,6 @@ import android.widget.FrameLayout
 import androidx.annotation.ColorInt
 import androidx.annotation.IntDef
 import com.ziwenl.library.R
-import java.lang.annotation.RetentionPolicy
 
 /**
  * PackageName : com.ziwenl.library.widgets
@@ -33,7 +32,7 @@ class SrcLoopScrollFrameLayout : FrameLayout {
          * 滚动方向
          */
         @IntDef(OUT_SLIDE_TOP, OUT_SLIDE_BOTTOM, OUT_SLIDE_LEFT, OUT_SLIDE_RIGHT)
-        @java.lang.annotation.Retention(RetentionPolicy.SOURCE)
+        @Retention(AnnotationRetention.SOURCE)
         annotation class ScrollOrientation
 
         /**

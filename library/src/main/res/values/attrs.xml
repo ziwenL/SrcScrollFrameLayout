@@ -14,8 +14,6 @@
     </attr>
     <!-- 滚动方向,默认是竖直方向滚动-->
     <attr name="scrollOrientation" format="integer">
-        <!--        <enum name="vertical" value="0" />-->
-        <!--        <enum name="horizontal" value="1" />-->
         <enum name="toTop" value="0" />
         <enum name="toBottom" value="1" />
         <enum name="toLeft" value="2" />
